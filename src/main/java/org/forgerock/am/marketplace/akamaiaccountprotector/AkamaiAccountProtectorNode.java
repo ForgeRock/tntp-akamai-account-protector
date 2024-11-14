@@ -9,6 +9,8 @@
 package org.forgerock.am.marketplace.akamaiaccountprotector;
 
 import static org.forgerock.am.marketplace.akamaiaccountprotector.AkamaiAccountProtectorNode.AkamaiOutcomeProvider.*;
+import static org.forgerock.json.JsonValue.json;
+import static org.forgerock.json.JsonValue.object;
 
 import java.util.*;
 import javax.inject.Inject;
@@ -146,7 +148,7 @@ public class AkamaiAccountProtectorNode implements Node {
         String[] akamaiHeader = refererList.get(0).split(";");
 
         // Initialize json object
-        JsonValue riskSignalsObject = new JsonValue(1);
+        JsonValue riskSignalsObject = json(object(1));
 
         // Loop through each key-value pair and
         // 1. Add it to transient state
