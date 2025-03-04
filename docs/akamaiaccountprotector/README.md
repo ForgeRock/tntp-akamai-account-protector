@@ -33,7 +33,7 @@ The Akamai Account Protector node allows journey administrators to ingest Akamai
 
 ## Inputs
 
-The Akamai Account Protector node retrieves User Risk data from the Akamai-User-Risk HTTP request header.
+The Akamai Account Protector node retrieves user risk data from the Akamai-User-Risk HTTP request header.
 
 ## Configuration
 
