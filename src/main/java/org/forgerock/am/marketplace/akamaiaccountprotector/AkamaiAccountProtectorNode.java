@@ -107,20 +107,51 @@ public class AkamaiAccountProtectorNode implements Node {
         try {
             // Capture the header value
             List<String> akamaiUserRiskHeader = context.request.headers.get("Akamai-User-Risk");
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            logger.error("STRING LIST - AKAMAI USER RISK HEADER: {}", akamaiUserRiskHeader);
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-            // Call getRiskSignals method to parse and reformat akamai risk header
-            JsonValue riskSignals = getRiskSignals(akamaiUserRiskHeader);
+            // Split header at the semicolon delimiters
+            String[] akamaiHeader = akamaiUserRiskHeader.get(0).split(";");
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            logger.error("STRING ARRAY - SPLIT USER RISK HEADER: {}", akamaiHeader);
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-            // Always save the Akamai HTTP header to Transient State
-            nodeState.putTransient("AkamaiHttpHeader", riskSignals);
-
-            // If true, save the Akamai HTTP header to Shared State
-            if (config.saveAkamaiHeader()) {
-                nodeState.putShared("AkamaiHttpHeader", riskSignals);
+            // Loop through and add each key-value pair individually to transient state
+            for (String keyValuePair : akamaiHeader) {
+                String[] pairs = keyValuePair.split("=", 2);
+                if (pairs.length == 2) {
+                    nodeState.putTransient(pairs[0], pairs[1]);
+                }
             }
 
+            // If true, save the Akamai HTTP header to shared state
+            if (config.saveAkamaiHeader()) {
+                for (String keyValuePair : akamaiHeader) {
+                    String[] pairs = keyValuePair.split("=", 2);
+                    if (pairs.length == 2) {
+                        nodeState.putShared(pairs[0], pairs[1]);
+                    }
+                }
+            }
+
+            // Parse risk signals object to retrieve the score key-value pair
+            JsonValue riskSignalsObject = json(object(1));
+            for (String keyValuePair : akamaiHeader) {
+                String[] pairs = keyValuePair.split("=", 2);
+                if (pairs.length == 2) {
+                    riskSignalsObject.put(pairs[0], pairs[1]);
+                }
+            }
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            logger.error("JSON OBJECT - PARSED USER RISK HEADER: {}", riskSignalsObject);
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+
             // Retrieve the 'score' value from the Akamai request header
-            Integer overallScore = riskSignals.get("score").asInteger();
+            Integer overallScore = riskSignalsObject.get("score").asInteger();
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+            logger.error("OVERALL SCORE: {}", overallScore);
+            logger.error("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
             // Handle the outcomes based on overallValue
             if (overallScore <= config.lowValue()) {
@@ -140,26 +171,6 @@ public class AkamaiAccountProtectorNode implements Node {
             context.getStateFor(this).putTransient(LOGGER_PREFIX + "StackTrace", new Date() + ": " + stackTrace);
             return Action.goTo(CLIENT_ERROR_OUTCOME_ID).build();
         }
-    }
-
-    private JsonValue getRiskSignals(List<String> refererList) {
-
-        // Split header at the semicolon delimiters
-        String[] akamaiHeader = refererList.get(0).split(";");
-
-        // Initialize json object
-        JsonValue riskSignalsObject = json(object(1));
-
-        // Loop through each key-value pair and
-        // 1. Add it to transient state
-        // 2. Add it to the JSON object deviceSignalsObj
-        for (String keyValuePair : akamaiHeader) {
-            String[] pairs = keyValuePair.split("=", 2);
-            if (pairs.length == 2) {
-                riskSignalsObject.put(pairs[0], pairs[1]);
-            }
-        }
-        return riskSignalsObject;
     }
 
     @Override
