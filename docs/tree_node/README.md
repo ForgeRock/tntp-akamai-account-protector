@@ -100,6 +100,6 @@ If this node logs an error, review the log messages to find the reason for the e
 
 The following example journey illustrates how to use the Akamai Account Protector node:
 
-![](/docs/akamaiaccountprotector/akamai-account-protector-journey.png)
+![](/docs/tree_node/akamai-account-protector-journey.png)
 
 The Akamai Account Protector node parses through the Akamai-User-Risk HTTP request header and extracts the user risk score. Based on the risk score, the user is taken down the appropriate outcome.
