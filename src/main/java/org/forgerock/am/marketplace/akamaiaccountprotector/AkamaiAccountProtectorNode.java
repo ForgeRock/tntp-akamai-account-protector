@@ -98,8 +98,7 @@ public class AkamaiAccountProtectorNode implements Node {
             // Capture the header value
             List<String> akamaiUserRiskHeader = context.request.headers.get("Akamai-User-Risk");
 
-            if(akamaiUserRiskHeader != null && !akamaiUserRiskHeader.isEmpty()) {
-
+            if(!akamaiUserRiskHeader.isEmpty()) {
                 // Split header at the semicolon delimiters
                 String[] akamaiHeader = akamaiUserRiskHeader.get(0).split(";");
 
@@ -131,7 +130,9 @@ public class AkamaiAccountProtectorNode implements Node {
                 }
 
                 // Retrieve the 'score' value from the Akamai request header
-                Integer overallScore = riskSignalsObject.get("score").asInteger();
+                JsonValue overallScoreJson = riskSignalsObject.get("score");
+                String overallScoreString = overallScoreJson.asString();
+                int overallScore = Integer.parseInt(overallScoreString);
 
                 // Handle the outcomes based on overallValue
                 if (overallScore <= config.mediumValue()) {
