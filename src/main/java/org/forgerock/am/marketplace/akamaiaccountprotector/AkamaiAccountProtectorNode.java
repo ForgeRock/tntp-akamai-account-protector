@@ -48,23 +48,31 @@ public class AkamaiAccountProtectorNode implements Node {
      */
     public interface Config {
         /**
+         * Shared state attribute containing High Limit Value
+         *
+         * @return The High Limit Value shared state attribute
+         */
+        @Attribute(order = 100, requiredValue = true)
+        default Integer highValue() {
+            return 50;
+        }
+
+        /**
          * Shared state attribute containing Medium Limit Value
          *
          * @return The Medium Limit Value shared state attribute
          */
         @Attribute(order = 200, requiredValue = true)
         default Integer mediumValue() {
-            return 50;
+            return 25;
         }
-
-
 
         /**
          * Shared state attribute to enable saving Akamai header.
          *
          * @return True if the Akamai header should be saved to shared state; false otherwise.
          */
-        @Attribute(order = 500)
+        @Attribute(order = 300)
         default boolean saveAkamaiHeader() {
             return false;
         }
@@ -90,7 +98,7 @@ public class AkamaiAccountProtectorNode implements Node {
             // Capture the header value
             List<String> akamaiUserRiskHeader = context.request.headers.get("Akamai-User-Risk");
 
-            if(akamaiUserRiskHeader != null) {
+            if(akamaiUserRiskHeader != null && !akamaiUserRiskHeader.isEmpty()) {
 
                 // Split header at the semicolon delimiters
                 String[] akamaiHeader = akamaiUserRiskHeader.get(0).split(";");
