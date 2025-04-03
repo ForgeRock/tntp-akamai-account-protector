@@ -48,13 +48,13 @@ public class AkamaiAccountProtectorNode implements Node {
      */
     public interface Config {
         /**
-         * Shared state attribute containing Low Limit Value
+         * Shared state attribute containing High Limit Value
          *
-         * @return The Low Limit Value shared state attribute
+         * @return The High Limit Value shared state attribute
          */
         @Attribute(order = 100, requiredValue = true)
-        default Integer lowValue() {
-            return 26;
+        default Integer highValue() {
+            return 50;
         }
 
         /**
@@ -64,17 +64,7 @@ public class AkamaiAccountProtectorNode implements Node {
          */
         @Attribute(order = 200, requiredValue = true)
         default Integer mediumValue() {
-            return 51;
-        }
-
-        /**
-         * Shared state attribute containing High Limit Value
-         *
-         * @return The High Limit Value shared state attribute
-         */
-        @Attribute(order = 300, requiredValue = true)
-        default Integer highValue() {
-            return 76;
+            return 25;
         }
 
         /**
@@ -82,7 +72,7 @@ public class AkamaiAccountProtectorNode implements Node {
          *
          * @return True if the Akamai header should be saved to shared state; false otherwise.
          */
-        @Attribute(order = 500)
+        @Attribute(order = 300)
         default boolean saveAkamaiHeader() {
             return false;
         }
@@ -108,31 +98,53 @@ public class AkamaiAccountProtectorNode implements Node {
             // Capture the header value
             List<String> akamaiUserRiskHeader = context.request.headers.get("Akamai-User-Risk");
 
-            // Call getRiskSignals method to parse and reformat akamai risk header
-            JsonValue riskSignals = getRiskSignals(akamaiUserRiskHeader);
+            if(!akamaiUserRiskHeader.isEmpty()) {
+                // Split header at the semicolon delimiters
+                String[] akamaiHeader = akamaiUserRiskHeader.get(0).split(";");
 
-            // Always save the Akamai HTTP header to Transient State
-            nodeState.putTransient("AkamaiHttpHeader", riskSignals);
+                // Loop through and add each key-value pair individually to transient state
+                for (String keyValuePair : akamaiHeader) {
+                    String[] pairs = keyValuePair.split("=", 2);
+                    if (pairs.length == 2) {
+                        nodeState.putTransient(pairs[0], pairs[1]);
+                    }
+                }
 
-            // If true, save the Akamai HTTP header to Shared State
-            if (config.saveAkamaiHeader()) {
-                nodeState.putShared("AkamaiHttpHeader", riskSignals);
-            }
+                // If true, save the Akamai HTTP header to shared state
+                if (config.saveAkamaiHeader()) {
+                    for (String keyValuePair : akamaiHeader) {
+                        String[] pairs = keyValuePair.split("=", 2);
+                        if (pairs.length == 2) {
+                            nodeState.putShared(pairs[0], pairs[1]);
+                        }
+                    }
+                }
 
-            // Retrieve the 'score' value from the Akamai request header
-            Integer overallScore = riskSignals.get("score").asInteger();
+                // Parse risk signals object to retrieve the score key-value pair
+                JsonValue riskSignalsObject = json(object(1));
+                for (String keyValuePair : akamaiHeader) {
+                    String[] pairs = keyValuePair.split("=", 2);
+                    if (pairs.length == 2) {
+                        riskSignalsObject.put(pairs[0], pairs[1]);
+                    }
+                }
 
-            // Handle the outcomes based on overallValue
-            if (overallScore <= config.lowValue()) {
-                return Action.goTo(LOW_RISK_OUTCOME_ID).build();
-            } else if (overallScore <= config.mediumValue()) {
-                return Action.goTo(MEDIUM_RISK_OUTCOME_ID).build();
-            } else if (overallScore <= config.highValue()) {
-                return Action.goTo(HIGH_RISK_OUTCOME_ID).build();
+                // Retrieve the 'score' value from the Akamai request header
+                JsonValue overallScoreJson = riskSignalsObject.get("score");
+                String overallScoreString = overallScoreJson.asString();
+                int overallScore = Integer.parseInt(overallScoreString);
+
+                // Handle the outcomes based on overallValue
+                if (overallScore <= config.mediumValue()) {
+                    return Action.goTo(LOW_RISK_OUTCOME_ID).build();
+                } else if (overallScore <= config.highValue()) {
+                    return Action.goTo(MEDIUM_RISK_OUTCOME_ID).build();
+                } else {
+                    return Action.goTo(HIGH_RISK_OUTCOME_ID).build();
+                }
             } else {
-                return Action.goTo(CRITICAL_RISK_OUTCOME_ID).build();
+                return Action.goTo(NO_SCORE_OUTCOME_ID).build();
             }
-
         } catch (Exception ex) {
             String stackTrace = ExceptionUtils.getStackTrace(ex);
             logger.error(LOGGER_PREFIX + "Exception occurred: ", ex);
@@ -140,26 +152,6 @@ public class AkamaiAccountProtectorNode implements Node {
             context.getStateFor(this).putTransient(LOGGER_PREFIX + "StackTrace", new Date() + ": " + stackTrace);
             return Action.goTo(CLIENT_ERROR_OUTCOME_ID).build();
         }
-    }
-
-    private JsonValue getRiskSignals(List<String> refererList) {
-
-        // Split header at the semicolon delimiters
-        String[] akamaiHeader = refererList.get(0).split(";");
-
-        // Initialize json object
-        JsonValue riskSignalsObject = json(object(1));
-
-        // Loop through each key-value pair and
-        // 1. Add it to transient state
-        // 2. Add it to the JSON object deviceSignalsObj
-        for (String keyValuePair : akamaiHeader) {
-            String[] pairs = keyValuePair.split("=", 2);
-            if (pairs.length == 2) {
-                riskSignalsObject.put(pairs[0], pairs[1]);
-            }
-        }
-        return riskSignalsObject;
     }
 
     @Override
@@ -179,7 +171,7 @@ public class AkamaiAccountProtectorNode implements Node {
         static final String LOW_RISK_OUTCOME_ID = "low";
         static final String MEDIUM_RISK_OUTCOME_ID = "medium";
         static final String HIGH_RISK_OUTCOME_ID = "high";
-        static final String CRITICAL_RISK_OUTCOME_ID = "critical";
+        static final String NO_SCORE_OUTCOME_ID = "noscore";
         static final String CLIENT_ERROR_OUTCOME_ID = "clientError";
 
         @Override
@@ -191,7 +183,7 @@ public class AkamaiAccountProtectorNode implements Node {
             outcomes.add(new Outcome(LOW_RISK_OUTCOME_ID, bundle.getString(LOW_RISK_OUTCOME_ID)));
             outcomes.add(new Outcome(MEDIUM_RISK_OUTCOME_ID, bundle.getString(MEDIUM_RISK_OUTCOME_ID)));
             outcomes.add(new Outcome(HIGH_RISK_OUTCOME_ID, bundle.getString(HIGH_RISK_OUTCOME_ID)));
-            outcomes.add(new Outcome(CRITICAL_RISK_OUTCOME_ID, bundle.getString(CRITICAL_RISK_OUTCOME_ID)));
+            outcomes.add(new Outcome(NO_SCORE_OUTCOME_ID, bundle.getString(NO_SCORE_OUTCOME_ID)));
             outcomes.add(new Outcome(CLIENT_ERROR_OUTCOME_ID, bundle.getString(CLIENT_ERROR_OUTCOME_ID)));
 
             return outcomes;

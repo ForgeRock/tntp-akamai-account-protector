@@ -52,7 +52,7 @@ import static java.util.Arrays.asList;
  */
 
 public class AkamaiAccountProtectorPlugin extends AbstractNodeAmPlugin {
-    protected static final String CURRENT_VERSION = "0.0.9";
+    protected static final String CURRENT_VERSION = "0.0.20";
     protected static final String LOG_APPENDER = "[Version: " + CURRENT_VERSION + "][Marketplace]";
     private static final Logger logger = LoggerFactory.getLogger(AkamaiAccountProtectorPlugin.class);
     private final String LOGGER_PREFIX = "[AkamaiAccountProtectorPlugin]" + AkamaiAccountProtectorPlugin.LOG_APPENDER;

@@ -52,20 +52,14 @@ You must set up the following before using the Akamai Account Protector node:
   </thead>
 
   <tr>
-    <td>Low Risk Threshold</td>
-      <td>The maximum score for a low risk assessment. Scores up to this value are categorized as Low risk.
-      </td>
+    <td>High Risk Threshold</td>
+    <td>The maximum score for a High risk assessment. Scores above Medium and up to this value are categorized as High risk. Any score above this value are considered Critical risk.
+    </td>
   </tr>
 
   <tr>
     <td>Medium Risk Threshold</td>
     <td>The maximum score for a medium risk assessment. Scores above Low and up to this value are categorized as Medium risk.
-    </td>
-  </tr>
-
-  <tr>
-    <td>High Risk Threshold</td>
-    <td>The maximum score for a High risk assessment. Scores above Medium and up to this value are categorized as High risk. Any score above this value are considered Critical risk.
     </td>
   </tr>
 
@@ -88,7 +82,7 @@ The node writes the Akamai-User-Risk HTTP request header value to transient stat
 
 `High Risk` Risk score equates to a high risk assessment.
 
-`Critical Risk` Risk score equates to a critical risk assessment.
+`No Score` Akamai-User-Risk header is empty.
 
 `Error` There was an error during the verification process.
 
@@ -100,6 +94,6 @@ If this node logs an error, review the log messages to find the reason for the e
 
 The following example journey illustrates how to use the Akamai Account Protector node:
 
-![](/docs/akamaiaccountprotector/akamai-account-protector-journey.png)
+![](/docs/tree_node/akamai-account-protector-journey.png)
 
 The Akamai Account Protector node parses through the Akamai-User-Risk HTTP request header and extracts the user risk score. Based on the risk score, the user is taken down the appropriate outcome.
