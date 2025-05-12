@@ -10,7 +10,7 @@ This integration retrieves User Risk data from Akamai Account Protector to asses
 
 * [Akamai Account Protector Documentation](https://techdocs.akamai.com/account-protector/docs/welcome-to-account-protector)
 
-Identity Cloud provides the following artifacts to enable the Akamai Account Protector Node:
+Identity Cloud provides the following documentation to install and configure the Akamai Account Protector Node:
 
 * [Akamai Account Protector](https://github.com/ForgeRock/tntp-akamai-account-protector/blob/main/docs/scripted_decision_node/README.md)
   
