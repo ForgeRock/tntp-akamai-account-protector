@@ -12,7 +12,7 @@ This integration retrieves User Risk data from Akamai Account Protector to asses
 
 Identity Cloud provides the following documentation to install and configure the Akamai Account Protector Node:
 
-* [Akamai Account Protector](https://github.com/ForgeRock/tntp-akamai-account-protector/blob/main/docs/scripted_decision_node/README.md)
+* [Akamai Account Protector Tree Node Documentation](https://github.com/ForgeRock/tntp-akamai-account-protector/blob/main/docs/scripted_decision_node/README.md)
   
 <!-- SUPPORT -->
 ## Support
